@@ -1,0 +1,42 @@
+---
+title: "HW 2 DATA 607"
+author: "Christina Kasman"
+date: "9/10/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+Assignment:
+Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates,imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5. Take the results (observations) and store them in a SQL database. Load the information into an R dataframe.
+#I decided to choose 10 movies instead of 6 to create additional data
+
+```{r}
+#Connect to SQL Database 
+library(RMySQL)
+drv <- dbDriver("MySQL")
+```
+```{r, echo=FALSE}
+con <- dbConnect(drv, user = "root", password = "barney17", dbname = "moviedata", host = "localhost")
+```
+
+con <- dbConnect(drv, user = "root", password = "password", dbname = "moviedata", host = "localhost")
+
+```{r}
+dbListFields(con, "moviedata")
+query <- "SELECT * FROM moviedata;"
+moviedata <- dbGetQuery(con, query)
+```
+```{r}
+dbDisconnect(con)
+#save as dataframe
+completemoviedata <- as.data.frame(moviedata)
+completemoviedata
+```
+```{r}
+#Create boxplot to show average movie ratings
+library(ggplot2)
+ggplot(completemoviedata, aes(movie,rating)) + 
+  geom_boxplot() + 
+  ylab("Rating") + theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Average Ratings for Movies")
+```
+
