@@ -1,0 +1,150 @@
+---
+title: "Project 1 DATA 607"
+author: "Christina Kasman"
+date: "9/20/2017"
+output: html_document
+---
+Loading Data
+```{r}
+#Loading the data and libraries
+library(stringr)
+chess_fields <- c("PairNumber", "Name", "Totpoints", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "EOL")
+tournament <- read.table("/Users/christinakasman/Desktop/tournamentinfo.txt", header = FALSE, skip = 4, sep = "|", fill = TRUE, stringsAsFactors = FALSE, col.names = chess_fields)
+```
+
+Cleaning Data
+```{r}
+tournament <- subset(tournament, !Name == "", select = c(PairNumber:R7))
+head(tournament)
+```
+```{r}
+#seperate into two data frames - odd and even rows 
+tournament[seq(1, nrow(tournament), 2), ]
+tournament[seq(2, nrow(tournament), 2), ]
+```
+```{r}
+#combine two data frames using cbind
+tourn_new = cbind(tournament[seq(1, nrow(tournament), 2), ], tournament[seq(2, nrow(tournament), 2), ])
+```
+
+```{r}
+#rename the columns
+library(splitstackshape)
+colnames(tourn_new) = c ("ID", "Name", "Totpoints", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "State", "PrePost")
+head(tourn_new)
+```
+```{r}
+playerID <- unlist(str_extract_all(tourn_new, "\\s+[[:digit:]]{1,2}\\s+"))
+```
+
+
+```{r}
+#Extracting the Pre Rating 
+pre_rating <- unlist(str_extract_all(tourn_new, "[:]\\s+[[:digit:]]+"))
+pre_rating <- unlist(str_extract_all(pre_rating, "[[:digit:]]+"))
+```
+
+```{r}
+#Extracting the Post Rating 
+post_rating <- unlist(str_extract_all(tourn_new, "[>]\\s*[[:digit:]]+"))
+post_rating <- unlist(str_extract_all(post_rating, "[[:digit:]]+"))
+```
+
+
+```{r}
+#extract all names
+PlayerName <- unlist(str_extract_all(tourn_new, "[[:alpha:]]+\\s+[[:alpha:]]+\\s[[:alpha:]]*"))
+```
+```{r}
+#extract all states
+states_extract <- unlist(str_extract_all(tourn_new, "\\W\\s+[[:alpha:]]{2}\\W"))
+state <- unlist(str_extract_all(states_extract, "[[:alpha:]]{2}"))
+```
+
+```{r}
+#extract total points
+total_points1<- unlist(str_extract_all(tourn_new, "[[:digit:]].{1,2}[[:digit:]]"))
+total_points<- unlist(str_extract_all(total_points1, ".[.]."))
+```
+
+
+```{r}
+id<-seq(1,64,by=1)
+pre_rating<-str_trim(pre_rating,"both")
+post_rating<-str_trim(post_rating,"both")
+playerranks<-cbind(playerID, PlayerName, state, total_points, pre_rating,post_rating)
+playerranks<-as.data.frame(playerranks)
+head(playerranks)
+```
+```{r}
+#extract opponents
+opponent1 <- data.frame(as.numeric(str_extract_all(tourn_new$`R1`,"[[:digit:]]{1,}")))
+opponent2 <- data.frame(as.numeric(str_extract_all(tourn_new$`R2`,"[[:digit:]]{1,}")))
+opponent3 <- data.frame(as.numeric(str_extract_all(tourn_new$`R3`,"[[:digit:]]{1,}")))
+opponent4 <- data.frame(as.numeric(str_extract_all(tourn_new$`R4`,"[[:digit:]]{1,}")))
+opponent5 <- data.frame(as.numeric(str_extract_all(tourn_new$`R5`,"[[:digit:]]{1,}")))
+opponent6 <- data.frame(as.numeric(str_extract_all(tourn_new$`R6`,"[[:digit:]]{1,}")))
+opponent7 <- data.frame(as.numeric(str_extract_all(tourn_new$`R7`,"[[:digit:]]{1,}")))
+```
+
+```{r}
+opponents <- cbind(tourn_new$'ID', tourn_new$'Name', opponent1, opponent2, opponent3, opponent4, opponent5, opponent6, opponent7)
+names(opponents) <- c("PairNumber","Name","Opp 1","Opp 2","Opp 3","Opp 4","Opp 5","Opp 6","Opp 7")
+
+```
+```{r}
+for(i in 1:dim(opponents)[1]){
+    opponents$NGames[i] <- 7 - as.numeric(sum(is.na(opponents[i,])))
+}
+head(opponents)
+```
+
+
+```{r}
+y <- cbind(playerranks, opponents)
+y[is.na(y)] <- " "
+head(y)
+```
+
+
+```{r}
+#Loop to find average value
+Average_Opponent_Pre_Rating <- c()
+
+for (i in y$PairNumber){
+  a <- y[y$'opp 1'==i, "pre_rating"]
+  a <- a[!is.na(a)]
+  b <- y[y$'opp 2'==i, "pre_rating"]
+  b <- b[!is.na(b)]
+  c <- y[y$'opp 3'==i, "pre_rating"]
+  d <- y[y$'opp 4'==i, "pre_rating"]
+  d <- d[!is.na(d)]
+  e <- y[y$'opp 5'==i, "pre_rating"]
+  e <- e[!is.na(e)]
+  f <- y[y$'opp 6'==i, "pre_rating"]
+  f <- f[!is.na(f)]
+  g <- y[y$'opp 7'==i, "pre_rating"]
+  g <- g[!is.na(g)]
+  u <- mean(c(a, b, c, d, e, f, g))
+  Average_Opponent_Pre_Rating  <- c(Average_Opponent_Pre_Rating, u)
+}
+
+```
+
+```{r}
+final <- cbind(playerranks, Average_Opponent_Pre_Rating)
+head(final)
+```
+
+```{r}
+write.csv(final, "Chess Tournament.csv")
+```
+
+
+
+
+
+
+
+
+
