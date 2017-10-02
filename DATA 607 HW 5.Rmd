@@ -1,0 +1,103 @@
+---
+title: "DATA 607 HW 5"
+author: "Christina Kasman"
+date: "10/1/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+<h3>(1) Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above.
+You’re encouraged to use a “wide” structure similar to how the information appears above, so
+that you can practice tidying and transformations as described below.
+(2) Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy
+and transform your data.
+(3) Perform analysis to compare the arrival delays for the two airlines.
+<h3>
+
+Load libraries
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+Read CSV file
+Rename Columns
+```{r}
+airplanes <-read.csv("/Users/christinakasman/Desktop/airplanes data607.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+airplanes
+```
+
+```{r}
+names(airplanes) <- c("Airline", "Status", "LosAngeles", "Phoenix", "SanDiego", "SanFrancisco", "Seattle")
+airplanes
+```
+
+Remove NA values using drop_na from plyr package
+```{r}
+airplanes5 <- airplanes %>% drop_na()
+airplanes5
+```
+
+
+```{r}
+for (i in 1:dim(airplanes5)[1]){
+  if (i %% 2 == 0){
+      airplanes5$Airline[i] <-  airplanes5$Airline[i-1]
+  }
+}
+airplanes5
+```
+
+
+Use gather function to transform data into Tidy dataset
+```{r}
+airplanesnew <- airplanes5%>% gather("city", "Count", LosAngeles:Seattle) 
+airplanesnew
+```
+
+```{r}
+airplanesnew2 <- as.data.frame(airplanesnew)
+airplanesnew4 <- airplanesnew %>%  
+  spread("Status", "Count")
+names(airplanesnew4) <- c("Airline", "city", "Delayed", "Ontime")
+airplanesnew4
+```
+```{r}
+counts <- airplanesnew4 %>% group_by(Airline) %>% summarise(Totaldelayed = sum(Delayed), Totalontime = sum(Ontime))
+counts
+```
+```{r}
+graph1 <- mutate(counts, Airline, Totaldelayed, Totalontime, Totalflights = Totaldelayed + Totalontime, percentdelayed = ((Totaldelayed/(Totalontime + Totaldelayed))*100), percentontime = ((Totalontime/(Totalontime + Totaldelayed))*100))
+graph1
+```
+
+**Overall, AM West has a nigher number of delayed flights, but when looking at ratios, Alaska has the highest probability of having a flight delayed. AM West has almost double the total number of flights**
+
+
+```{r}
+library(ggplot2)
+g <- ggplot(graph1, aes(x = Airline)) + geom_bar(aes(weight = Totaldelayed), fill="#DD8888") + ylab("Delayed") + ggtitle("Total Delayed Flights per Airline")
+g
+```
+
+
+```{r}
+graph2 <- airplanesnew4 %>% group_by(Airline, city) %>% summarise(Totaldelayed = sum(Delayed), Totalontime = sum(Ontime)) %>% 
+ mutate(city, Totaldelayed, Totalontime, percentdelayed = ((Totaldelayed/(Totalontime + Totaldelayed))*100), percentontime = ((Totalontime/(Totalontime + Totaldelayed))*100))
+graph2
+```
+```{r}
+g3 <- ggplot(graph2, aes(x = city, y = Totaldelayed)) + geom_bar(aes(fill= Airline), stat = "Identity", position=position_dodge()) + ylab("Delayed") + ggtitle("Total Delayed Flights per Airline")
+g3
+```
+
+**The highest number of delayed flights occur at Phoenix aiport by AM West Airlines** 
+```{r}
+g1 <- ggplot(graph2, aes(x = city, y = percentdelayed)) + geom_bar(aes(fill= Airline), stat = "Identity", position=position_dodge()) + ylab("On Time") + ggtitle("Percent Delayed Flights per Airline")
+g1
+```
+
+**The highest probability of flights delayed occur at San Francisco airport by AM West**
+
+
+
