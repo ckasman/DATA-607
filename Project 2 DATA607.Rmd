@@ -1,0 +1,75 @@
+---
+title: "Project 2, part 1"
+author: "Christina Kasman"
+date: "10/8/2017"
+output: html_document
+---
+**For this project, I used two data sets from the H1B Visa data set - I tidied the data to specidically looks at H1B Visa Petitions for each country and year**
+
+Load Libraries and read csv file
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+data <- read.csv('/Users/christinakasman/Desktop/H1B Data.csv', header=FALSE, sep=",", stringsAsFactors=FALSE)
+
+```
+
+```{r}
+my.new.data <-  data[-c(2), ]  
+my.new.data <-  data[-c(3, 5, 16, 12, 17, 42, 43, 47, 48, 57, 58, 62, 63, 76, 80, 81), ]  
+```
+```{r}
+newdata <- as.data.frame(t(my.new.data))
+```
+Create Table for Countries - Change header to be first row of dataframe
+
+```{r}
+Countries <- newdata[c(1:12) ,c(13:33, 35)]
+as.data.frame(Countries)
+colnames(Countries) = as.character(unlist(Countries[1,])) # the first row will be the header
+Countries1 = Countries[-1, ] 
+colnames(Countries1)[1] <- "Year"
+```
+```{r}
+Countries2 <- gather(Countries1, "Country", "H1B_Petitions_Filed", 2:22)
+```
+Group by Country and summarise
+```{r}
+#Have to change to .numeric for correct character type
+Countries3 <- Countries2 %>% group_by(Country) %>% 
+summarise(Total_H1B_Petitions_Filed = sum(as.numeric(H1B_Petitions_Filed)))
+```
+
+```{r}
+Countries3 <- arrange(Countries3, desc(as.numeric(Total_H1B_Petitions_Filed)))
+```
+**Total H1B Visas from 2007-2017 per Country. 
+India had the highest number of H1B Visa petitions, by more than 7 times any other country**
+Why does india have the most: https://www.recode.net/2017/4/13/15281170/china-india-tech-h1b-visas
+```{r}
+kable(Countries3)
+```
+
+```{r}
+
+Countriesyear <- Countries2 %>% group_by(Country, Year) %>% 
+  summarise(totalyear = sum(as.numeric(H1B_Petitions_Filed)))
+kable(Countriesyear)
+```
+```{r}
+ggplot(Countriesyear, aes(Year, totalyear)) + geom_bar(stat = "identity", fill="#009E73") +ggtitle("Petitions for H1B Visas per year")
+```
+
+As you can see from the barplot, 2016 had the highest number of H1B Visa petitions overall
+
+
+
+
+
+
+
+
+
+
