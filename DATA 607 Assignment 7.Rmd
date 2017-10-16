@@ -1,0 +1,71 @@
+---
+title: "Data 607 Assignment 7 XML"
+author: "Christina Kasman"
+date: "10/15/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more
+than one author. For each book, include the title, authors, and two or three other attributes that you find
+interesting.
+Take the information that you’ve selected about these three books, and separately create three files which
+store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”,
+“books.xml”, and “books.json”). To help you better understand the different file structures, I’d prefer that you
+create each of these files “by hand” unless you’re already very comfortable with the file formats.
+Write R code, using your packages of choice, to load the information from each of the three sources into
+separate R data frames. Are the three data frames identical?
+Your deliverable is the three source files and the R code. If you can, package your assignment solution up into
+an .Rmd file and publish to rpubs.com. [This will also require finding a way to make your three text files
+accessible from the web].
+
+XML Data
+```{r}
+library(XML)
+library(RCurl)
+library(data.table)
+library(DT)
+
+```
+
+xmldata <- xmlParse(file = "/Users/xxx/Desktop/data-set.xml")
+```{r, echo=FALSE}
+xmldata <- xmlParse(file = "/Users/christinakasman/Desktop/data-set.xml")
+xmldata
+```
+
+
+```{r}
+data <- xmlToDataFrame(xmldata, stringsAsFactors = FALSE)
+library(DT)
+datatable(data)
+```
+
+
+HTML
+html_parsed<-htmlParse(file =  "file:///Users/xxx/Desktop/index.html")
+```{r, echo= FALSE}
+html_parsed<-htmlParse(file =  "file:///Users/christinakasman/Desktop/index.html")
+```
+```{r}
+html_parsed.df <- as.data.frame(readHTMLTable(html_parsed))
+datatable(html_parsed.df)
+```
+
+JSON 
+
+```{r}
+library(RJSONIO)
+```
+
+json_parsed<-fromJSON(content = "/Users/xxx/Desktop/convertcsv.json")
+
+```{r, echo=FALSE}
+json_parsed<-fromJSON(content = "/Users/christinakasman/Desktop/convertcsv.json")
+```
+```{r}
+json <-as.data.frame(json_parsed)
+datatable(json)
+```
+
+
