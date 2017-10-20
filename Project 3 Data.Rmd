@@ -1,0 +1,48 @@
+---
+title: "Web Scraping for Project 3"
+author: "Christina Kasman"
+date: "10/19/2017"
+output: html_document
+---
+
+```{r}
+library(xml2)
+library(rvest)
+library(stringr)
+job1 <- read_html("https://rew22.ultipro.com/SAR1004/jobboard/JobDetails.aspx?__ID=*E67125DCA9517820")
+job1.title <- job1 %>% html_nodes("#DataCell_Req_TitleFK .PrintSmall") %>% html_text()
+job1.skills <- job1 %>% html_nodes("ul:nth-child(10) li") %>% html_text()
+job1.title
+job1.skills 
+```
+```{r}
+job2 <- read_html("https://jobs.biogen.com/job/Cambridge-Senior-Data-Scientist-MA-02138/424526600/?feedId=127000&utm_source=Indeed&utm_campaign=Biogen_Indeed")
+job2.title <- job2 %>% html_nodes("#job-title") %>% html_text()
+job2.skills <- job2 %>% html_nodes("tr:nth-child(6) td:nth-child(2)") %>% html_text()
+job2.title
+job2.skills 
+```
+```{r}
+job3 <- read_html("https://www.indeed.com/viewjob?jk=47336e3895e744fc&q=Pharmaceutical+Data+Scientist&tk=1bsrnqg710kgf4b5&from=web")
+job3.title <- job3 %>% html_nodes("title") %>% html_text()
+job3.skills <- job3 %>% html_nodes("li li") %>% html_text()
+job3.title
+job3.skills 
+```
+
+```{r}
+job4 <- read_html("https://careers.regeneron.com/job/REGEA0026304106/Data-Scientist-supporting-Immune-Oncology-efforts-?jobsource=indeed&utm_source=indeed&utm_medium=indeed&utm_campaign=indeed-feed")
+job4.title <- job4 %>% html_nodes("h1") %>% html_text()
+job4.skills <- job4 %>% html_nodes(".job-details p") %>% html_text()
+job4.title
+job4.skills 
+```
+
+```{r}
+job5 <- read_html("https://jobs.jnj.com/jobs/1575161128/2-Senior-Data-Scientist-Medical-Safety?lang=en-us&src=JB-10281")
+job5.title <- job5 %>% html_nodes("#label-job-title") %>% html_text()
+job5.skills <- job5 %>% html_nodes("ul:nth-child(12) li") %>% html_text()
+job5.title
+job5.skills 
+```
+
