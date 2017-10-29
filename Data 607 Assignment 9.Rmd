@@ -1,0 +1,37 @@
+---
+title: "DATA 607 HW 9"
+author: "Christina Kasman"
+date: "10/25/2017"
+output: html_document
+---
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and transform it to an R dataframe.
+
+```{r}
+options(stringsAsFactors = FALSE)
+library(httr)
+library(jsonlite)
+library(DT)
+library(knitr)
+library(dplyr)
+```
+
+#Registered for API key
+```{r, echo=FALSE}
+  api_key <- "?api-key=046721d6539e4338a818eb9e1d199ac9"
+```
+
+```{r}
+#Most emailed blog posts and articles
+ url <- "http://api.nytimes.com/svc/mostpopular/v2/mostemailed/all-sections/1.json"
+url <- paste(url, api_key, sep="")
+x <-fromJSON(url)
+names(x)
+
+```
+
+```{r}
+#Create Data Frame
+  df <- jsonlite::fromJSON(url, flatten = TRUE)
+datatable(x$results)
+```
+
