@@ -1,0 +1,60 @@
+---
+title: "DATA 607 HW12"
+author: "Christina Kasman"
+date: "11/16/2017"
+output: html_document
+---
+
+```{r}
+library(rmarkdown)
+library(RMySQL)
+library(RNeo4j)
+drv <- dbDriver("MySQL")
+```
+
+
+```{r, echo=FALSE}
+con <- dbConnect(drv, user = "root", password = "barney17", dbname = "TB", host = "localhost")
+```
+
+con <- dbConnect(drv, user = "root", password = "xxxx", dbname = "TB", host = "localhost")
+
+```{r}
+dbListFields(con, "tb")
+```
+
+```{r}
+#Adjust for candidate type and location
+query <- "SELECT * FROM tb;"
+tb <- dbGetQuery(con, query)
+```
+
+```{r, echo=FALSE}
+graph <- startGraph("http://localhost:7474/db/data/", 
+                    username="neo4j", 
+                    password="barney17")
+```
+graph <- startGraph("http://localhost:7474/db/data/", 
+                    username="neo4j", 
+                    password="xxxx")
+```{r}
+clear(graph, input = FALSE)
+```
+
+
+Pros of storing in NoSQL
+1. Easier to save data across databases
+2. Easier to update records
+3. More agile
+4. Not in tabular format
+5.Elastic scalability
+
+
+Pros of Relational Databases
+1.More mature
+2. More advanced expertise - been around longer
+3. Tabular structure
+4. Ease of data retrieval
+5. Use generical language (SQL)
+
+
