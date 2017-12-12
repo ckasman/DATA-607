@@ -1,0 +1,150 @@
+---
+title: "DATA 607 Final Project: Health and Income"
+author: "Christina Kasman"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+**US States Health and Income**
+
+
+The Problem:
+I am interested in exploring the relationship between the healthiest areas of the country and income. My hypothesis is that the areas of the country with higher median income will also have better health. 
+I will use web scraping to to get data about what the top indicators of health are. According to Wikipedia, Health indicators “are quantifiable characteristics of a population which researchers use as supporting evidence for describing the health of a population". I will then further explore how to get data on each of these indicators for each area of the country (states). I will then look at income data per area of the country (states) and see if there is a correlation.
+
+
+Where will the data come from?
+Health indicator data will be retrieved from the World Health Organization. This information is gathered using survey methodology.
+http://www.who.int/healthinfo/indicators/2015/metadata/en/
+
+Based on the information from the health indicator data, I can download data from the Center of Disease Control per state in US.
+https://www.cdc.gov/nchs/pressroom/sosmap/heart_disease_mortality/heart_disease.htm
+
+The United States Census Bureau website will provide the data for median income for each state.
+https://factfinder.census.gov/faces/tableservices/jsf/pages/productview.xhtml?src=bkmk
+
+Health indicators were found on Wikipedia. I Used the rvest package and web scraping to export the health indicators list.
+```{r}
+library(xml2)
+library(rvest)
+library(stringr)
+health <- read_html("http://www.who.int/healthinfo/indicators/2015/metadata/en/")
+health.indicator <- health %>% html_nodes("#primary li") 
+health.indicator1 <- html_text(health.indicator)
+
+#remove HTML tags
+health.indicator1<-gsub("\n","",health.indicator1)  
+health.indicator1 <- gsub("\t\t\t\t","",health.indicator1)
+health.indicators <-as.factor(health.indicator1)
+as.data.frame(health.indicators)
+```
+
+After reveiwing the list, I have decided to look at obesity rates and cardiovascular health specifically for each state. 
+
+
+**Obesity:**
+Obesity is a rising epidemic in the United States and an important health indicator.I downloaded obesity rates from 2016 from United Health Foundation-Americas health ratings data. This was downloaded as an xlx file and then converted to a CSV.
+```{r}
+rankings <- read.csv("/Users/christinakasman/Desktop/obesity.csv") %>% as.data.frame()
+rankings <-rankings[-c(51,52),] #Remove District of Columbia and US
+names(rankings) = c("Edition", "Measure", "State", "OverallHealthrank", "obesityvalue","Score", "LowerCI", "UpperCI", "Source", "Source.Year") #rename headers
+rankings <- subset(rankings, select = c(3,4,5,6))
+
+```
+
+```{r}
+State.Name <-state.abb[match(rankings$State,state.name)] #Match States names to abbreviations
+rankings2 <- cbind(rankings, State.Name) #Bind new state abbreviation column - to be used as unique Idenitifier
+head(rankings2)
+```
+
+**Cardiovascular Health:**
+
+I then explored #11 on the list of health indicators -
+"Mortality between 30 and 70 years of age from cardiovascular diseases, cancer, diabetes or chronic respiratory diseases" specifically looking at deaths related to Cardiovascular health.
+
+I downloaded Heart Disease Mortality by State Data (from 2015) from Centers for Disease Control and Prevention website
+```{r}
+heartdisease <- read.csv("/Users/christinakasman/Desktop/HEART_DISEASE2015 (2).csv") %>% as.data.frame  #read in CSV
+heartdisease1 <- as.data.frame(heartdisease)
+names(heartdisease1) = c("State.Name", "MortRate", "Deaths", "URL")
+head(heartdisease1)
+```
+
+
+**Median Income:**
+
+I downloaded (as a CSV) the Median Income Data from The United States Census Bureau website which will provide the data for median income for each state.
+https://factfinder.census.gov/faces/tableservices/jsf/pages/productview.xhtml?src=bkmk
+
+```{r}
+income <- read.csv("/Users/christinakasman/Desktop/ACS_11_1YR_R1901.US01PRF_with_ann.csv") %>% as.data.frame()
+income <- income[-c(1,2,7, 54), ]  #read in CSV file and remove first row, United states, District of Columbia , Puerto Rico
+names(income) = c("ID", "ID2", "Country", "Target ID", "Target ID 2", "Rank","State", "EST", "MOE") #rename headers
+income1 <- subset(income, select = c(6,7,8,9)) #subset columns
+```
+Changing State Names to match abbreviations
+```{r}
+State.Name <-state.abb[match(income1$State,state.name)] #Match States names to abbreviations
+income2 <- cbind(income1, State.Name) #Bind new state abbreviation column - to be used as unique Idenitifier
+income2 <- income2[,c(1,2, 5,3,4)]
+head(income2)
+```
+Merge Data Frames Together
+```{r}
+merge1 <- merge(income2, heartdisease1, by= "State.Name") 
+```
+
+```{r}
+merge2 <- merge(merge1, rankings2, by = "State.Name" )
+merge2 <- subset(merge2, select = c(1,2,3,4,6,7,10,11))
+merge2 <- transform(merge2, EST = as.numeric(EST))
+```
+
+```{r}
+library(ggplot2)
+ggplot(merge2, aes(EST, MortRate, color = MortRate)) + geom_point(shape = 16, size = 2, show.legend = FALSE) + geom_smooth(method=lm) + theme_minimal() +
+   xlab("Estimated Median Income") +
+  ylab("Mortality Rate") +
+   theme(
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) 
+
+```
+
+```{r}
+library(ggplot2)
+ggplot(merge2, aes(EST, obesityvalue, color = obesityvalue)) + geom_point(shape = 16, size = 2, show.legend = FALSE) +
+  geom_smooth(method=lm) +
+  theme_minimal() +
+  xlab("Estimated Median Income") +
+  ylab("Obesity") +
+   theme(
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+Is Mortality Rates or Obesity Values a predictor of estimated median income?
+```{r}
+oblm <- lm(merge2$obesityvalue~merge2$EST, data = merge2)
+mortllm <- lm(merge2$MortRate~merge2$EST, data = merge2)
+summary(oblm)
+```
+```{r}
+summary(mortllm)
+```
+```{r}
+res1 <- cor.test(merge2$EST, merge2$obesityvalue, 
+                    method = "pearson")
+res1
+```
+```{r}
+res1 <- cor.test(merge2$EST, merge2$MortRate, 
+                    method = "pearson")
+res1
+```
+Outcome:
+There is a stronger correlation between Median Income and Mortality Rate than between Median Income and Obesity Value - BUT not by much! They both have strong negative correlations!
+Overall, we can say that good health has a strong correlation to income which is represented in different U.S. states. Areas with higher income have better health.
